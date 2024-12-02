@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import math
 
 def read_image(file_path):
     """
@@ -70,23 +71,106 @@ def histogram(imag):
     """
     return 0
 
+def generateRowColumnSobelGradients():
+    """Generates the x-component and y-component of Sobel operators."""
+    rowGradient = np.array([[1, 0, -1], [2, 0, -2], [1, 0, -1]])  # Sobel kernel for row (horizontal)
+    colGradient = np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])  # Sobel kernel for column (vertical)
+    return rowGradient, colGradient
+
 def simple_edge_sobel(image):
     """
-    Applies simple edge detection(sobel)
+    Perform Sobel edge detection from scratch.
+
+    Args:
+        image (numpy array): Input grayscale image as a 2D array.
+
+    Returns:
+        result_rgb (numpy array): Sobel edge-detected image in RGB format.
     """
-    return 0
+    # Ensure image is in grayscale
+    if len(image.shape) > 2:
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # Get image dimensions
+    rows, cols = image.shape
+
+    # Initialize result array
+    result = np.zeros((rows, cols), dtype=float)
+
+    # Pad the image to handle edges
+    padded_image = np.pad(image, pad_width=1, mode='constant', constant_values=0)
+
+    # Generate Sobel kernels
+    rowGradient, colGradient = generateRowColumnSobelGradients()
+
+    # Apply Sobel operator
+    for i in range(1, rows + 1):
+        for j in range(1, cols + 1):
+            # Extract the 3x3 subregion
+            subimage = padded_image[i-1:i+2, j-1:j+2]
+
+            # Compute row and column gradients
+            rowSum = np.sum(rowGradient * subimage)
+            colSum = np.sum(colGradient * subimage)
+
+            # Compute gradient magnitude
+            result[i-1, j-1] = math.sqrt(rowSum**2 + colSum**2)
+
+    # Normalize the result to 0-255
+    result = (result / result.max() * 255).astype(np.uint8)
+
+    # Convert the result to RGB for display purposes
+    result_rgb = cv2.cvtColor(result, cv2.COLOR_GRAY2RGB)
+
+    return result_rgb
 
 def simple_edge_prewitt(image):
-    """
-    Applies simple edge detection(prewitt)
-    """
-    return 0
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # Define Prewitt kernels
+    kernelx = np.array([[1, 0, -1], [1, 0, -1], [1, 0, -1]])  # X gradient
+    kernely = np.array([[1, 1, 1], [0, 0, 0], [-1, -1, -1]])  # Y gradient
+
+    # Apply the Prewitt operator
+    prewittx = cv2.filter2D(gray, cv2.CV_64F, kernelx)  # Use CV_64F for better precision
+    prewitty = cv2.filter2D(gray, cv2.CV_64F, kernely)
+
+   
+    magnitude = np.sqrt(prewittx**2 + prewitty**2)
+    
+    # Normalize to preserve contrast
+    magnitude = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX)
+    magnitude = cv2.convertScaleAbs(magnitude)  # Convert to 8-bit
+
+    return magnitude
+
+
 
 def simple_edge_kirsch(image):
-    """
-    Applies simple edge detection(kirsch) and get its edge direction
-    """
-    return 0
+    # Convert to grayscale
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+    kirsch_kernels = [
+        np.array([[5, 5, 5], [-3, 0, -3], [-3, -3, -3]]),  
+        np.array([[-3, 5, 5], [-3, 0, 5], [-3, -3, -3]]), 
+        np.array([[-3, -3, 5], [-3, 0, 5], [-3, -3, 5]]),  
+        np.array([[-3, -3, -3], [-3, 0, 5], [-3, 5, 5]]),  
+        np.array([[-3, -3, -3], [-3, 0, -3], [5, 5, 5]]), 
+        np.array([[-3, -3, -3], [5, 0, -3], [5, 5, -3]]),  
+        np.array([[5, -3, -3], [5, 0, -3], [5, -3, -3]]),  
+        np.array([[5, 5, -3], [5, 0, -3], [-3, -3, -3]])   
+    ]
+    
+    # Apply Kirsch kernels
+    kirsch_edges = [cv2.filter2D(gray, -1, kernel) for kernel in kirsch_kernels]
+    
+    
+    kirsch_magnitude = np.max(kirsch_edges, axis=0)
+    kirsch_direction = np.argmax(kirsch_edges, axis=0)  
+    
+    
+    kirsch_magnitude = cv2.convertScaleAbs(kirsch_magnitude)
+    
+    return kirsch_magnitude, kirsch_direction
 
 
 def advanced_edge_homogeneity(image):

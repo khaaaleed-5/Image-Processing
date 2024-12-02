@@ -381,13 +381,18 @@ class GUI:
             messagebox.showerror("Error", "Please upload an image first.")
             return
 
-        # Call the advanced halftoning function from image_utils
-        processed_image = simple_edge_kirsch(self.original_image)
+    # Call the Kirsch edge detection function
+        processed_image, direction = simple_edge_kirsch(self.original_image)
 
-        # Update the processed image
+    # Update the processed image
         self.processed_image = processed_image
 
-        # Refresh images
+    # Optional: Store or process direction data for further use
+        self.edge_direction = direction
+        print("Edge Direction (Numerical Indices):")
+  # Save direction for potential visualization or analysis
+        print(direction)
+    # Refresh images
         self.display_images()
 
     def advanced_edge_homogeneity(self):
