@@ -76,7 +76,7 @@ class GUI:
             filetypes=[("Image Files", "*.png *.jpg *.jpeg *.bmp *.tiff")]
         )
         if file_path:
-            # Load the image using the external utility
+            # Load the image by read function from utils
             self.original_image = read_image(file_path)
             self.display_images()
 
