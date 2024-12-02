@@ -126,16 +126,37 @@ def low_bass_filtering(image):
     return 0
 
 def add_image(image):
-    """
-    Applies operations on the image(add to its copy)
-    """
-    return 0
+    image = Gray_image(image)
+    image2 = image
+    height, width = image.shape
+    added_image = np.zeros((height, width), dtype=np.uint8)
+    for i in range(height):
+        for j in range(width):
+            added_image[i, j] = image[i, j] + image2[i, j]
+            added_image[i, j] = max(0, min(added_image[i, j],255))
+    return added_image
 
 def subtract_image(image):
-    """
-    Applies operations on the image(subtract from its copy)
-    """
-    return 0
+    image = Gray_image(image)
+    image2 = image
+    height, width = image.shape
+    subtracted_image = np.zeros((height, width), dtype=np.uint8)
+    for i in range(height):
+        for j in range(width):
+            subtracted_image[i, j] = image[i, j] - image2[i, j]
+            subtracted_image[i, j] = max(0, min(subtracted_image[i, j],255))
+    return subtracted_image
+
+def invert_image(image):
+    image = Gray_image(image)
+    height, width = image.shape
+    Inverted_image = np.zeros((height, width), dtype=np.uint8)
+    
+    for i in range(height):
+        for j in range(width):
+            Inverted_image[i, j] = 255 - image[i, j]
+
+    return Inverted_image
 
 def histogram_segementation(image):
     """

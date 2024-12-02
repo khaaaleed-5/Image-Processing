@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from PIL import Image, ImageTk
 import cv2
-from utils import read_image, threshold, simple_halftoning, advanced_halftoning, histogram, simple_edge_sobel, simple_edge_prewitt, simple_edge_kirsch, advanced_edge_homogeneity, advanced_edge_difference, advanced_edge_differenceofGaussians, advanced_edge_contrastBased, low_bass_filtering, high_bass_filtering, add_image, subtract_image, histogram_segementation
+from utils import read_image, threshold, simple_halftoning, advanced_halftoning, histogram, simple_edge_sobel, simple_edge_prewitt, simple_edge_kirsch, advanced_edge_homogeneity, advanced_edge_difference, advanced_edge_differenceofGaussians, advanced_edge_contrastBased, low_bass_filtering, high_bass_filtering, add_image, subtract_image, invert_image, histogram_segementation
 
 class GUI:
     def __init__(self, root):
@@ -168,7 +168,7 @@ class GUI:
         Op_menu = tk.OptionMenu(
             self.functionality_frame,
             self.operation_var,
-            "Add", "Subtract"
+            "Add", "Subtract","Invert"
         )
         Op_menu.config(
             bg=self.button_bg, fg=self.button_fg, font=self.font, width=20,
@@ -259,6 +259,8 @@ class GUI:
             self.add_image()
         elif op_type == "Subtract":
             self.subtract_image()
+        elif op_type == "Invert":
+            self.Invert_image()
     
     def on_histseg_select(self, *args):
         op_type = self.histseg_var.get()
@@ -493,6 +495,21 @@ class GUI:
 
         # Call the subtract image function from utils
         processed_image = subtract_image(self.original_image)
+
+        # Update the processed image
+        self.processed_image = processed_image
+
+        # Refresh images
+        self.display_images()
+
+
+    def Invert_image(self):
+        if self.original_image is None:
+            messagebox.showerror("Error", "Please upload an image first.")
+            return
+
+        # Call the subtract image function from utils
+        processed_image = invert_image(self.original_image)
 
         # Update the processed image
         self.processed_image = processed_image
