@@ -24,7 +24,7 @@ def threshold(image):
     threshold_value = np.mean(gray_image)
     return threshold_value
 
-def simple_halftoning(image, block_size=4):
+def simple_halftoning(image):
     """
     Applies a simple halftoning technique without error diffusion.
     """
