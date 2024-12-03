@@ -150,7 +150,7 @@ class GUI:
         filtering_menu = tk.OptionMenu(
             self.functionality_frame,
             self.filtering_var,
-            "High-Bass", "Low-Bass"
+            "High-Bass", "Low-Bass", "Median"
         )
         filtering_menu.config(
             bg=self.button_bg, fg=self.button_fg, font=self.font, width=20,
