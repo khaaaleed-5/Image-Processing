@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from PIL import Image, ImageTk
 import cv2
-from utils import read_image, threshold, simple_halftoning, advanced_halftoning, histogram, simple_edge_sobel, simple_edge_prewitt, simple_edge_kirsch, advanced_edge_homogeneity, advanced_edge_difference, advanced_edge_differenceofGaussians, advanced_edge_contrastBased, low_bass_filtering, high_bass_filtering, add_image, subtract_image, invert_image, histogram_segementation
+from utils import read_image, threshold, simple_halftoning, advanced_halftoning, histogram, simple_edge_sobel, simple_edge_prewitt, simple_edge_kirsch, advanced_edge_homogeneity, advanced_edge_difference, advanced_edge_differenceofGaussians, advanced_edge_contrastBased, low_bass_filtering, high_bass_filtering, median_filtering,add_image, subtract_image, invert_image, histogram_segementation
 
 class GUI:
     def __init__(self, root):
@@ -252,6 +252,8 @@ class GUI:
             self.high_bass_filtering()
         elif filtering_type == "Low-Bass":
             self.low_bass_filtering()
+        elif filtering_type == "Median":
+            self.median_filtering()
     
     def on_operation_select(self, *args):
         op_type = self.operation_var.get()
@@ -472,6 +474,20 @@ class GUI:
 
         # Call the high bass function from utils
         processed_image = low_bass_filtering(self.original_image)
+
+        # Update the processed image
+        self.processed_image = processed_image
+
+        # Refresh images
+        self.display_images()
+        
+    def median_filtering(self):
+        if self.original_image is None:
+            messagebox.showerror("Error", "Please upload an image first.")
+            return
+
+        # Call the median function from utils
+        processed_image = median_filtering(self.original_image)
 
         # Update the processed image
         self.processed_image = processed_image
