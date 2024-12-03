@@ -145,8 +145,6 @@ def simple_edge_prewitt(image):
 
     return magnitude
 
-
-
 def simple_edge_kirsch(image):
     # Convert to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -173,7 +171,6 @@ def simple_edge_kirsch(image):
     kirsch_magnitude = cv2.convertScaleAbs(kirsch_magnitude)
     
     return kirsch_magnitude, kirsch_direction
-
 
 def advanced_edge_homogeneity(image):
     """
@@ -260,10 +257,6 @@ def advanced_edge_differenceofGaussians(image):
     DifferenceOfGaussian = np.abs(image_7x7 - image_9x9)
     
     return DifferenceOfGaussian
-
-
-
-
 
 def advanced_edge_contrastBased(image):
     """
