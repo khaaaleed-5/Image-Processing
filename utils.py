@@ -313,7 +313,7 @@ def advanced_edge_contrastBased(image):
 
     return contrast_image_edge.astype(np.uint8)
 
-def variance_edge_detection(image):
+def advanced_edge_varianceBased(image):
     """
     Applies variance operator
     """
@@ -329,7 +329,7 @@ def variance_edge_detection(image):
 
     return variance_edge_image
 
-def range_edge_detection(image):
+def advanced_edge_rangeBased(image):
     """
     Applies range operator
     """
@@ -443,11 +443,6 @@ def invert_image(image):
             Inverted_image[i, j] = 255 - image[i, j]
 
     return Inverted_image
-
-def histogram_segementation(image):
-    """
-    """
-    return 0
 
 def manual_segmentation(image, low_thresh, high_thresh, value=255):
     """

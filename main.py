@@ -67,8 +67,9 @@ class GUI:
         self.operation_var.set("Operations")
 
         # Histogram segementation dropdown menu
-        self.histseg_var = tk.StringVar(self.control_frame)
-        self.histseg_var.set("Segementation")
+        self.segmentation_var = tk.StringVar(self.control_frame)
+        self.segmentation_var.set("Segmentation")
+
 
 
     def upload_photo(self):
@@ -132,7 +133,7 @@ class GUI:
         advanced_edge_detection_menu = tk.OptionMenu(
             self.functionality_frame,
             self.advanced_edge_detection_var,
-            "Homogeneity", "Difference", "Gaussian", "Contrast-based"
+            "Homogeneity", "Difference", "Gaussian", "Contrast-based", "Variance-based", "Range-based"
         )
         advanced_edge_detection_menu.config(
             bg=self.button_bg, fg=self.button_fg, font=self.font, width=20,
@@ -150,7 +151,7 @@ class GUI:
         filtering_menu = tk.OptionMenu(
             self.functionality_frame,
             self.filtering_var,
-            "High-Bass", "Low-Bass", "Median"
+            "High-pass", "Low-pass", "Median"
         )
         filtering_menu.config(
             bg=self.button_bg, fg=self.button_fg, font=self.font, width=20,
@@ -182,23 +183,23 @@ class GUI:
         # Trigger filtering function based on selected option
         self.operation_var.trace("w", self.on_operation_select)
 
-     # histogram segementation dropdown menu
-        histseg_menu = tk.OptionMenu(
+        # histogram segementation dropdown menu
+        segmentation_menu = tk.OptionMenu(
             self.functionality_frame,
-            self.histseg_var,
+            self.segmentation_var,
             "Manual", "Peak", "Valley", "Adaptive"
         )
-        histseg_menu.config(
+        segmentation_menu.config(
             bg=self.button_bg, fg=self.button_fg, font=self.font, width=20,
-            height=1
+            height=2  # Set fixed height to match buttons
         )
-        histseg_menu["menu"].config(
+        segmentation_menu["menu"].config(
             bg=self.button_bg, fg=self.button_fg
-        )  # Style the dropdown menu 
-        histseg_menu.pack(pady=10)
+        )  # Style the dropdown menu (no hover)
+        segmentation_menu.pack(pady=10)
 
-        # Trigger filtering function based on selected option
-        self.operation_var.trace("w", self.on_histseg_select)
+        # Trigger edge detection function based on selected option
+        self.segmentation_var.trace("w", self.on_segmentation_select)
 
 
 
@@ -243,8 +244,12 @@ class GUI:
             self.advanced_edge_difference()
         elif edge_detection_type == "Gaussian":
             self.advanced_edge_differenceofGaussians()
-        else:
+        elif edge_detection_type == "Contrast-based":
             self.advanced_edge_contrastBased()
+        elif edge_detection_type == "Variance-based":
+            self.advanced_edge_varianceBased()
+        else:
+            self.advanced_edge_rangeBased()
         
     def on_filtering_select(self, *args):
         filtering_type = self.filtering_var.get()
@@ -264,9 +269,17 @@ class GUI:
         elif op_type == "Invert":
             self.Invert_image()
     
-    def on_histseg_select(self, *args):
-        op_type = self.histseg_var.get()
-        #####
+    def on_segmentation_select(self, *args):
+        segmentation_type = self.segmentation_var.get()
+        if segmentation_type == "Manual":
+            self.manual_segmentation()
+        elif segmentation_type == "Peak":
+            self.histogram_peaks_segmentation()
+        elif segmentation_type == "Valley":
+            self.histogram_valleys_segmentation()
+        else:
+            self.histogram_adaptive_segmentation()
+
 
 
     def display_images(self):
@@ -452,7 +465,35 @@ class GUI:
 
         # Refresh images
         self.display_images()
-    
+
+    def advanced_edge_rangeBased(self):
+        if self.original_image is None:
+            messagebox.showerror("Error", "Please upload an image first.")
+            return
+
+        # Call the advanced histogram function from utils
+        processed_image = advanced_edge_rangeBased(self.original_image)
+
+        # Update the processed image
+        self.processed_image = processed_image
+
+        # Refresh images
+        self.display_images()
+
+    def advanced_edge_varianceBased(self):
+        if self.original_image is None:
+            messagebox.showerror("Error", "Please upload an image first.")
+            return
+
+        # Call the advanced histogram function from utils
+        processed_image = advanced_edge_varianceBased(self.original_image)
+
+        # Update the processed image
+        self.processed_image = processed_image
+
+        # Refresh images
+        self.display_images()
+
     def high_bass_filtering(self):
         if self.original_image is None:
             messagebox.showerror("Error", "Please upload an image first.")
@@ -523,7 +564,6 @@ class GUI:
         # Refresh images
         self.display_images()
 
-
     def Invert_image(self):
         if self.original_image is None:
             messagebox.showerror("Error", "Please upload an image first.")
@@ -538,13 +578,55 @@ class GUI:
         # Refresh images
         self.display_images()
 
-    def histogram_segmentation(self):
+    def histogram_peaks_segmentation(self):
         if self.original_image is None:
             messagebox.showerror("Error", "Please upload an image first.")
             return
 
         # Call the advanced histogram function from utils
-        processed_image = histogram_segementation(self.original_image)
+        processed_image, clusters = histogram_peaks_segmentation(self.original_image)
+
+        # Update the processed image
+        self.processed_image = processed_image
+
+        # Refresh images
+        self.display_images()
+    
+    def manual_segmentation(self):
+        if self.original_image is None:
+            messagebox.showerror("Error", "Please upload an image first.")
+            return
+
+        # Call the advanced histogram function from utils
+        processed_image = manual_segmentation(self.original_image,low_thresh=30,high_thresh=100)
+
+        # Update the processed image
+        self.processed_image = processed_image
+
+        # Refresh images
+        self.display_images()
+
+    def histogram_valleys_segmentation(self):
+        if self.original_image is None:
+            messagebox.showerror("Error", "Please upload an image first.")
+            return
+
+        # Call the advanced histogram function from utils
+        processed_image = histogram_valleys_segmentation(self.original_image)
+
+        # Update the processed image
+        self.processed_image = processed_image
+
+        # Refresh images
+        self.display_images()
+
+    def histogram_adaptive_segmentation(self):
+        if self.original_image is None:
+            messagebox.showerror("Error", "Please upload an image first.")
+            return
+
+        # Call the advanced histogram function from utils
+        processed_image = histogram_adaptive_segmentation(self.original_image)
 
         # Update the processed image
         self.processed_image = processed_image
