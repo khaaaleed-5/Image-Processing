@@ -177,27 +177,172 @@ def simple_edge_kirsch(image):
 
 def advanced_edge_homogeneity(image):
     """
-    Applies advanced edge detection(homogeneity)
+    Applies advanced edge detection (homogeneity)
     """
-    return 0
+    threshold_value = 5
+    gray_image = Gray_image(image)
+    height, width = gray_image.shape
+    homogeneity_image = np.zeros((height, width), dtype=np.float32)
+    
+    for i in range(1, height-1):
+        for j in range(1, width-1):
+            center = gray_image[i, j]
+            differences = [
+                abs(float(center) - float(gray_image[i-1, j-1])),
+                abs(float(center) - float(gray_image[i-1, j])),
+                abs(float(center) - float(gray_image[i-1, j+1])),
+                abs(float(center) - float(gray_image[i, j-1])),
+                abs(float(center) - float(gray_image[i, j+1])),
+                abs(float(center) - float(gray_image[i+1, j-1])),
+                abs(float(center) - float(gray_image[i+1, j])),
+                abs(float(center) - float(gray_image[i+1, j+1])),       
+            ]
+            homogeneity_value = max(differences)
+            homogeneity_image[i, j] = homogeneity_value if homogeneity_value > threshold_value else 0
+
+    return homogeneity_image
 
 def advanced_edge_difference(image):
     """
     Applies advanced edge detection(difference)
     """
-    return 0
+    threshold_value = 10
+    gray_image = Gray_image(image)
+    height, width = gray_image.shape
+    difference_image = np.zeros((height, width), dtype=np.float32)
+    
+    for i in range(1, height-1):
+        for j in range(1, width-1):
+            # Remove trailing commas and unpack the tuples
+            difference1 = abs(gray_image[i-1, j-1] - gray_image[i+1, j+1])
+            difference2 = abs(gray_image[i-1, j+1] - gray_image[i+1, j-1])
+            difference3 = abs(gray_image[i, j-1] - gray_image[i, j+1])
+            difference4 = abs(gray_image[i-1, j] - gray_image[i+1, j])
+            
+            # Create a list of differences and use max()
+            differences = [difference1, difference2, difference3, difference4]
+            max_difference = max(differences)
+            
+            difference_image[i, j] = max_difference if max_difference > threshold_value else 0
+
+    return difference_image
 
 def advanced_edge_differenceofGaussians(image):
     """
     Applies advanced edge detection(difference of Gaussians 7*7 and 9*9)
     """
-    return 0
+    gray_image = Gray_image(image)
+    
+    mask_7x7 = np.array([
+        [0, 0, -1, -1, -1, 0, 0],
+        [0, -2, -3, -3, -3, -2, 0],
+        [-1, -3, 5, 5, 5, -3, -1],
+        [-1, -3, 5, 16, 5, -3, -1],
+        [-1, -3, 5, 5, 5, -3, -1],
+        [0, -2, -3, -3, -3, -2, 0],
+        [0, 0, -1, -1, -1, 0, 0]
+    ], dtype=np.float32)
+
+    mask_9x9 = np.array([
+        [0, 0, 0, -1, -1, -1, 0, 0, 0],
+        [0, -2, -3, -3, -3, -3, -3, -2, 0],
+        [0, -3, -2, -1, -1, -1, -2, -3, 0],
+        [-1, -3, -1, 9, 9, 9, -1, -3, -1],
+        [-1, -3, -1, 9, 19, 9, -1, -3, -1],
+        [-1, -3, -1, 9, 9, 9, -1, -3, -1],
+        [0, -3, -2, -1, -1, -1, -2, -3, 0],
+        [0, -2, -3, -3, -3, -3, -3, -2, 0],
+        [0, 0, 0, -1, -1, -1, 0, 0, 0]
+    ], dtype=np.float32)
+
+    image_7x7 = cv2.filter2D(gray_image, -1, mask_7x7)
+    image_9x9 = cv2.filter2D(gray_image, -1, mask_9x9)
+    DifferenceOfGaussian = np.abs(image_7x7 - image_9x9)
+    
+    return DifferenceOfGaussian
+
+
+
+
 
 def advanced_edge_contrastBased(image):
     """
-    Applies advanced edge detection(contrast-based)
+    Applies advanced edge detection (contrast-based) with brightness, gamma correction, and contrast enhancement.
+    
+    Parameters:
+        image (numpy.ndarray): Input image (RGB or grayscale).
+        epsilon (float): Small constant to avoid division by zero.
+    
+    Returns:
+        numpy.ndarray: Contrast-enhanced edge-detected image.
     """
-    return 0
+    epsilon = 1e-10
+    gray_image = Gray_image(image)
+
+    # Enhance contrast using CLAHE
+    clahe = cv2.createCLAHE(clipLimit=5.0, tileGridSize=(4, 4))
+    contrast_enhanced = clahe.apply(gray_image)
+
+    # Apply gamma correction to brighten the image
+    gamma = 0.5  
+    gamma_corrected = np.power(contrast_enhanced / 255.0, gamma) * 255.0
+    gamma_corrected = np.clip(gamma_corrected, 0, 255).astype(np.uint8)
+
+    # Define Laplacian edge-detection mask
+    edge_mask = np.array([[0, -1, 0],
+                          [-1, 4, -1],
+                          [0, -1, 0]])
+
+    # Define smoothing mask 
+    smoothing_mask = np.ones((3, 3)) / 9
+
+    # Apply edge detection
+    image_edge = cv2.filter2D(gamma_corrected, -1, edge_mask)
+
+    # Apply smoothing
+    image_smooth = cv2.filter2D(gamma_corrected, -1, smoothing_mask).astype(np.float32)
+
+    # Avoid division by zero
+    image_smooth += epsilon
+
+    # Compute contrast-enhanced edge image
+    contrast_image_edge = image_edge / image_smooth
+
+    # Normalize the result to the range 0–255
+    contrast_image_edge = cv2.normalize(contrast_image_edge, None, 0, 255, cv2.NORM_MINMAX)
+
+    return contrast_image_edge.astype(np.uint8)
+
+def variance_edge_detection(image):
+    """
+    Applies variance operator
+    """
+    gray_image=Gray_image(image)
+    variance_edge_image =np.zeros_like(gray_image)
+    height,width=gray_image.shape
+    for i in range(1,height-1):
+        for j in range(1,width-1):
+            neighborhood=gray_image[i-1:i+2,j-1:j+2]
+            mean=np.mean(neighborhood)
+            variance= np.sum((neighborhood-mean)**2)/9
+            variance_edge_image[i,j]=variance
+
+    return variance_edge_image
+
+def range_edge_detection(image):
+    """
+    Applies range operator
+    """
+    gray_image=Gray_image(image)
+    range_edge_image =np.zeros_like(gray_image)
+    height,width=gray_image.shape
+    for i in range(1,height-1):
+        for j in range(1,width-1):
+            neighborhood=gray_image[i-1:i+2,j-1:j+2]
+            range_value= np.max(neighborhood)-np.min(neighborhood)
+            range_edge_image[i,j]=range_value
+
+    return range_edge_image
 
 def high_bass_filtering(image):
     #defining the high pass filter
