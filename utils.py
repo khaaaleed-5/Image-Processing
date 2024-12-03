@@ -198,16 +198,71 @@ def advanced_edge_contrastBased(image):
     return 0
 
 def high_bass_filtering(image):
-    """
-    Applies filtering(high-bass)
-    """
-    return 0
+    #defining the high pass filter
+    mask_high_pass= np.array([[0, -1, 0],
+                              [-1, 5, -1],
+                              [0, -1, 0]
+                              ], dtype=np.float32)
+    # Check if the image is in color (has 3 channels)
+    if len(image.shape) == 3 and image.shape[2] == 3:
+        # Convert the image to grayscale
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+    def conv(image, mask1):
+        result=cv2.filter2D(image, -1, mask1)
+        return result
+    
+    highpass=conv(image,mask_high_pass)
+    return highpass
 
 def low_bass_filtering(image):
-    """
-    Applies filtering(low-bass)
-    """
-    return 0
+    #defining the low pass filter
+    mask_low_pass= np.array([[0, 1/6, 0],
+                              [1/6, 2/6, 1/6],
+                              [0, 1/6, 0]
+                              ], dtype=np.float32)
+    # Check if the image is in color (has 3 channels)
+    if len(image.shape) == 3 and image.shape[2] == 3:
+        # Convert the image to grayscale
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+    def conv(image, mask1):
+        result=cv2.filter2D(image, -1, mask1)
+        return result
+    
+    lowpass=conv(image,mask_low_pass)
+    return lowpass
+
+def median_filtering(image):
+    # Check if the image is in color (has 3 channels)
+    if len(image.shape) == 3 and image.shape[2] == 3:
+        # Convert the image to grayscale
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # Get image dimensions
+    kernel_size=5
+    image_height, image_width = image.shape
+        
+    # Padding to handle borders (the filter will not work at borders without padding)
+    pad = kernel_size // 2
+    padded_image = np.pad(image, ((pad, pad), (pad, pad)), mode='constant', constant_values=0)
+        
+    # Create an empty array to store the filtered image
+    filtered_image = np.zeros_like(image)
+        
+    # Iterate over the image
+    for i in range(image_height):
+        for j in range(image_width):
+            # Extract the region of interest (kernel area)
+            region = padded_image[i:i+kernel_size, j:j+kernel_size]
+                
+            # Find the median of the region
+            median_value = np.median(region)
+                
+            # Set the pixel in the filtered image to the median value
+            filtered_image[i, j] = median_value
+
+    return filtered_image
 
 def add_image(image):
     image = Gray_image(image)
