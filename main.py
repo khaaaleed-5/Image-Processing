@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from PIL import Image, ImageTk
 import cv2
-from utils import read_image, threshold, simple_halftoning, advanced_halftoning, histogram, simple_edge_sobel, simple_edge_prewitt, simple_edge_kirsch, advanced_edge_homogeneity, advanced_edge_difference, advanced_edge_differenceofGaussians, advanced_edge_contrastBased, low_bass_filtering, high_bass_filtering, median_filtering,add_image, subtract_image, invert_image, histogram_segementation
+from utils import *
 
 class GUI:
     def __init__(self, root):
@@ -186,7 +186,7 @@ class GUI:
         histseg_menu = tk.OptionMenu(
             self.functionality_frame,
             self.histseg_var,
-            "Peak", "Valley", "Adaptive"
+            "Manual", "Peak", "Valley", "Adaptive"
         )
         histseg_menu.config(
             bg=self.button_bg, fg=self.button_fg, font=self.font, width=20,

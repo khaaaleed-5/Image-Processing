@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 import math
+from scipy.signal import find_peaks
+import matplotlib.pyplot as plt
 
 def read_image(file_path):
     """
@@ -301,3 +303,164 @@ def histogram_segementation(image):
     """
     """
     return 0
+
+def manual_segmentation(image, low_thresh, high_thresh, value=255):
+    """
+    Manual segmentation of an image using a low and high threshold. Where pixels within the threshold are set to `value`, and all other pixels are set to 0.
+    """
+    mask = np.zeros_like(image)
+    mask[(image >= low_thresh) & (image <= high_thresh)] = value
+    return mask
+
+def histogram_peaks_segmentation(image, num_clusters=2, value=255, color_palette='tab10'):
+    """
+    Segmentation of an image using histogram peaks.
+    """
+    # Compute the histogram of the image
+    hist = cv2.calcHist([image], [0], None, [256], [0, 255]).ravel()
+
+    peaks = find_hist_peaks(hist)
+    
+    print(f'All Peaks: {peaks}')
+
+    # If fewer peaks than requested clusters, raise an error
+    if len(peaks) < num_clusters:
+        raise ValueError(f"Not enough distinct peaks ({len(peaks)}) for {num_clusters} clusters")
+
+    # Select top peaks
+    top_peaks = peaks[:num_clusters]
+    
+    print(f'Selected Peaks: {top_peaks}')
+
+    # If 2 clusters, use original binary segmentation method
+    if num_clusters == 2:
+        low_thresh, high_thresh = calc_threshs(top_peaks)
+        mask = np.zeros_like(image)
+        mask[(image >= low_thresh) & (image <= high_thresh)] = value
+        return mask, None
+    
+    # Generate unique colors using a colormap
+    colors = plt.colormaps[color_palette](np.linspace(0, 1, num_clusters))[:, :3] * 255
+    
+    # Create a color-coded segmentation image
+    segmented_image = np.zeros((image.shape[0], image.shape[1], 3), dtype=np.uint8)
+    cluster_masks = []
+    
+    # Create thresholds between peaks
+    thresholds = [0] + [(top_peaks[i] + top_peaks[i+1]) // 2 for i in range(len(top_peaks)-1)] + [255]
+    
+    # Segment the image
+    for i in range(num_clusters):
+        # Create binary mask for this cluster
+        cluster_mask = np.zeros_like(image, dtype=bool)
+        cluster_mask = (image >= thresholds[i]) & (image < thresholds[i+1])
+        
+        # Color the segmented image
+        color_image = np.zeros((image.shape[0], image.shape[1], 3), dtype=np.uint8)
+        color_image[cluster_mask] = colors[i]
+        segmented_image[cluster_mask] = color_image[cluster_mask]
+        
+        # Create and store binary mask with value
+        binary_mask = np.zeros_like(image)
+        binary_mask[cluster_mask] = value
+        cluster_masks.append(binary_mask)
+    
+    return segmented_image, cluster_masks
+
+def calc_threshs(peaks):
+    """
+    Calculate the thresholds based on the histogram peaks.
+    """
+    peak1, peak2 = peaks
+    low_thresh = (peak1 + peak2) // 2
+    high_thresh = peak2
+
+    return low_thresh, high_thresh
+
+def histogram_valleys_segmentation(image):
+    """
+    Segmentation of an image using histogram valleys.
+    """
+    # Compute the histogram
+    hist = cv2.calcHist([image], [0], None, [256], [0, 255]).ravel()
+
+    # Find peaks in the histogram
+    peaks = find_hist_peaks(hist)[:2]
+    
+    print(f'All Peaks: {peaks}')
+
+    # Find valleys in the histogram
+    valley_point = find_hist_valley(peaks, hist)
+
+    print(f'Valley Point (low threshold): {valley_point}')
+
+    low_thresh, high_thresh = valley_point, peaks[1]
+
+    mask = np.zeros_like(image)
+    mask[(image >= low_thresh) & (image <= high_thresh)] = 255
+
+    return mask
+
+def find_hist_peaks(hist):
+    """
+    Find peaks in the histogram.
+    """
+    peaks, _ = find_peaks(hist, height=0)
+    return sorted(peaks, key=lambda x: hist[x], reverse=True)[:2]
+
+def find_hist_valley(peaks, hist):
+    """
+    Find valley point in the histogram.
+    """
+    point = 0
+    min_val = float('inf')
+    start, end = peaks
+    for i in range(start, end+1):
+        if hist[i] < min_val:
+            min_val = hist[i]
+            point = i
+    return point
+
+def histogram_adaptive_segmentation(image):
+    """
+    Segmentation of an image using adaptive histogram thresholding.
+    """
+    # Compute the histogram
+    hist = cv2.calcHist([image], [0], None, [256], [0, 255]).ravel()
+
+    # Find peaks in the histogram
+    peaks = find_hist_peaks(hist)[:2]
+
+    print(f'All Peaks: {peaks}')
+
+    # Find valleys in the histogram
+    valley_point = find_hist_valley(peaks, hist)
+
+    print(f'Valley Point (low threshold): {valley_point}')
+
+    low_thresh, high_thresh = valley_point, peaks[1]
+
+    mask = np.zeros_like(image)
+    mask[(image >= low_thresh) & (image <= high_thresh)] = 255
+
+    # Apply adaptive thresholding
+    background_mean, object_mean = calc_means(mask, image)
+
+    peaks = [int(background_mean), int(object_mean)]
+    low_thresh, high_thresh = find_hist_valley(peaks, hist), peaks[1]
+
+    print(f'Adaptive Thresholds: {low_thresh}, {high_thresh}')
+
+    mask = np.zeros_like(image)
+    mask[(image >= low_thresh) & (image <= high_thresh)] = 255
+
+    return mask
+
+def calc_means(mask, image):
+    """
+    Calculate the mean pixel values for the background and object regions.
+    """
+    foreground = image[mask == 255]
+    background = image[mask == 0]
+
+    return np.mean(background), np.mean(foreground)
