@@ -253,9 +253,9 @@ class GUI:
         
     def on_filtering_select(self, *args):
         filtering_type = self.filtering_var.get()
-        if filtering_type == "High-Bass":
+        if filtering_type == "High-pass Filter":
             self.high_bass_filtering()
-        elif filtering_type == "Low-Bass":
+        elif filtering_type == "Low-pass":
             self.low_bass_filtering()
         elif filtering_type == "Median":
             self.median_filtering()
@@ -282,7 +282,7 @@ class GUI:
 
 
 
-    def display_images(self):
+    def display_images(self,technique=None):
         # Clear the image frame
         for widget in self.image_frame.winfo_children():
             widget.destroy()
@@ -304,7 +304,8 @@ class GUI:
             processed_pil = Image.fromarray(self.processed_image)
             processed_resized = processed_pil.resize((400, 400))
             processed_photo = ImageTk.PhotoImage(processed_resized)
-            processed_label = tk.Label(self.image_frame, text="Processed Image", bg="#FFFFFF", font=self.font)
+            processed_label_text = technique if technique else "Processed Image"
+            processed_label = tk.Label(self.image_frame, text=processed_label_text, bg="#FFFFFF", font=self.font)
             processed_label.grid(row=0, column=1, padx=10, pady=5)
             processed_image_label = tk.Label(self.image_frame, image=processed_photo, bg="#FFFFFF")
             processed_image_label.image = processed_photo
@@ -333,7 +334,7 @@ class GUI:
         self.processed_image = processed_image
 
         # Refresh images
-        self.display_images()
+        self.display_images(technique="Simple Halftoning")
 
     def advanced_halftoning(self):
         if self.original_image is None:
@@ -347,7 +348,7 @@ class GUI:
         self.processed_image = processed_image
 
         # Refresh images
-        self.display_images()
+        self.display_images(technique="Advanced Halftoning")
     
     def histogram(self):
         if self.original_image is None:
@@ -361,7 +362,7 @@ class GUI:
         self.processed_image = processed_image
 
         # Refresh images
-        self.display_images()
+        self.display_images(technique="Histogram")
     
     def simple_edge_sobel(self):
         if self.original_image is None:
@@ -375,7 +376,7 @@ class GUI:
         self.processed_image = processed_image
 
         # Refresh images
-        self.display_images()    
+        self.display_images("Sobel Operator")    
 
     def simple_edge_prewitt(self):
         if self.original_image is None:
@@ -389,7 +390,7 @@ class GUI:
         self.processed_image = processed_image
 
         # Refresh images
-        self.display_images()
+        self.display_images(technique="Prewitt Operator")
 
     def simple_edge_kirsch(self):
         if self.original_image is None:
@@ -408,7 +409,7 @@ class GUI:
   # Save direction for potential visualization or analysis
         print(direction)
     # Refresh images
-        self.display_images()
+        self.display_images(technique="Kirsch Operator")
 
     def advanced_edge_homogeneity(self):
         if self.original_image is None:
@@ -422,7 +423,7 @@ class GUI:
         self.processed_image = processed_image
 
         # Refresh images
-        self.display_images()
+        self.display_images(technique="Homogeneity Operator")
 
     def advanced_edge_difference(self):
         if self.original_image is None:
@@ -436,7 +437,7 @@ class GUI:
         self.processed_image = processed_image
 
         # Refresh images
-        self.display_images()
+        self.display_images(technique="Difference Operator")
     
     def advanced_edge_differenceofGaussians(self):
         if self.original_image is None:
@@ -450,7 +451,7 @@ class GUI:
         self.processed_image = processed_image
 
         # Refresh images
-        self.display_images()
+        self.display_images(technique="Difference of Gaussians")
     
     def advanced_edge_contrastBased(self):
         if self.original_image is None:
@@ -464,7 +465,7 @@ class GUI:
         self.processed_image = processed_image
 
         # Refresh images
-        self.display_images()
+        self.display_images(technique="Contrast-Based")
 
     def advanced_edge_rangeBased(self):
         if self.original_image is None:
@@ -478,7 +479,7 @@ class GUI:
         self.processed_image = processed_image
 
         # Refresh images
-        self.display_images()
+        self.display_images(technique="Range-based")
 
     def advanced_edge_varianceBased(self):
         if self.original_image is None:
@@ -492,7 +493,7 @@ class GUI:
         self.processed_image = processed_image
 
         # Refresh images
-        self.display_images()
+        self.display_images(technique='Variance-Based')
 
     def high_bass_filtering(self):
         if self.original_image is None:
@@ -506,7 +507,7 @@ class GUI:
         self.processed_image = processed_image
 
         # Refresh images
-        self.display_images()
+        self.display_images(technique="High-Pass Filter")
 
     def low_bass_filtering(self):
         if self.original_image is None:
@@ -520,7 +521,7 @@ class GUI:
         self.processed_image = processed_image
 
         # Refresh images
-        self.display_images()
+        self.display_images(technique="Low-Bass Filter")
         
     def median_filtering(self):
         if self.original_image is None:
@@ -534,7 +535,7 @@ class GUI:
         self.processed_image = processed_image
 
         # Refresh images
-        self.display_images()
+        self.display_images(technique="Median Filter")
     
     def add_image(self):
         if self.original_image is None:
@@ -548,7 +549,7 @@ class GUI:
         self.processed_image = processed_image
 
         # Refresh images
-        self.display_images()
+        self.display_images(technique="Add Image")
     
     def subtract_image(self):
         if self.original_image is None:
@@ -562,7 +563,7 @@ class GUI:
         self.processed_image = processed_image
 
         # Refresh images
-        self.display_images()
+        self.display_images(technique="Subtract Image")
 
     def Invert_image(self):
         if self.original_image is None:
@@ -576,7 +577,7 @@ class GUI:
         self.processed_image = processed_image
 
         # Refresh images
-        self.display_images()
+        self.display_images(technique="Inverted Image")
 
     def histogram_peaks_segmentation(self):
         if self.original_image is None:
@@ -590,7 +591,7 @@ class GUI:
         self.processed_image = processed_image
 
         # Refresh images
-        self.display_images()
+        self.display_images(technique="Peak Segmentation")
     
     def manual_segmentation(self):
         if self.original_image is None:
@@ -604,7 +605,7 @@ class GUI:
         self.processed_image = processed_image
 
         # Refresh images
-        self.display_images()
+        self.display_images(technique="Manual Segmentation")
 
     def histogram_valleys_segmentation(self):
         if self.original_image is None:
@@ -618,7 +619,7 @@ class GUI:
         self.processed_image = processed_image
 
         # Refresh images
-        self.display_images()
+        self.display_images(technique="Valley Segmentation")
 
     def histogram_adaptive_segmentation(self):
         if self.original_image is None:
@@ -632,7 +633,7 @@ class GUI:
         self.processed_image = processed_image
 
         # Refresh images
-        self.display_images()
+        self.display_images(technique="Adaptive Segmentation")
 
 if __name__ == "__main__":
     root = tk.Tk()
