@@ -253,7 +253,7 @@ class GUI:
         
     def on_filtering_select(self, *args):
         filtering_type = self.filtering_var.get()
-        if filtering_type == "High-pass Filter":
+        if filtering_type == "High-pass":
             self.high_bass_filtering()
         elif filtering_type == "Low-pass":
             self.low_bass_filtering()
@@ -310,6 +310,8 @@ class GUI:
             processed_image_label = tk.Label(self.image_frame, image=processed_photo, bg="#FFFFFF")
             processed_image_label.image = processed_photo
             processed_image_label.grid(row=1, column=1, padx=10, pady=5)
+
+
 
     def threshold(self):
         if self.original_image is None:
