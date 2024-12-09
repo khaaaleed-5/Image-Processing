@@ -363,7 +363,7 @@ class GUI:
         self.processed_image = processed_image
 
         # Refresh images
-        self.display_images(technique="Histogram")
+        self.display_images(technique="Equalized Image")
         plt.figure(figsize=(10, 6))
         
         plt.subplot(1,2,1)

@@ -81,7 +81,11 @@ def histogram(image):
     for pixel in gray_image.flatten():
         histogram_arr[pixel] += 1
 
+    # Normalize the histogram
+    total_pixels = gray_image.size  # Total number of pixels in the image
+    # histogram_arr = histogram_arr / total_pixels  # Divide by total number of pixels to get probabilities
     cdf = histogram_arr.cumsum()  # Cumulative sum of the histogram
+    cdf_normalized = (cdf * 255).astype(np.uint8)  # Scale the CDF values to fit 0-255 range
     
     # Step 3: Normalize the CDF to the range [0, 255]
     cdf_normalized = np.uint8(255 * (cdf - cdf.min()) / (cdf.max() - cdf.min()))
