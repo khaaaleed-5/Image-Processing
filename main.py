@@ -356,15 +356,32 @@ class GUI:
         if self.original_image is None:
             messagebox.showerror("Error", "Please upload an image first.")
             return
-
+        
         # Call the histogram function from utils
-        processed_image = histogram(self.original_image)
-
+        processed_image, histogram_arr, equalized_histogram_arr = histogram(self.original_image)
         # Update the processed image
         self.processed_image = processed_image
 
         # Refresh images
-        self.display_images(technique="Histogram")
+        self.display_images(technique="Equalized Image")
+        plt.figure(figsize=(10, 6))
+        
+        plt.subplot(1,2,1)
+        plt.bar(range(256), histogram_arr, color='gray', edgecolor='black')
+        plt.title("Histogram of Image")
+        plt.xlabel("Pixel Intensity (0-255)")
+        plt.ylabel("Frequency")
+        plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+        plt.subplot(1,2,2)
+        plt.bar(range(256), equalized_histogram_arr, color='gray', edgecolor='black')
+        plt.title("Equalized histogram of Image")
+        plt.xlabel("Pixel Intensity (0-255)")
+        plt.ylabel("Frequency")
+        plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+        plt.show()
+
     
     def simple_edge_sobel(self):
         if self.original_image is None:
