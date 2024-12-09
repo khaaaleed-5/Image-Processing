@@ -3,6 +3,8 @@ import numpy as np
 import math
 from scipy.signal import find_peaks
 import matplotlib.pyplot as plt
+from PIL import Image, ImageDraw
+
 
 def read_image(file_path):
     """
@@ -55,23 +57,42 @@ def advanced_halftoning(image):
             img_array[i, j] = new_pixel
             # Error diffusion to neighboring pixels
             if i < row - 1: 
-                img_array[i + 1, j] += (5 / 16) * error
+                img_array[i + 1, j] += (5 / 16) * error         # down
             if i < row - 1 and j > 0:
-                img_array[i + 1, j - 1] += (3 / 16) * error
+                img_array[i + 1, j - 1] += (3 / 16) * error     # down -> left
             if i < row - 1 and j < column - 1:
-                img_array[i + 1, j + 1] += (1 / 16) * error
+                img_array[i + 1, j + 1] += (1 / 16) * error     # down -> right
             if j < column - 1:
-                img_array[i, j + 1] += (7 / 16) * error
+                img_array[i, j + 1] += (7 / 16) * error         # right
 
     # Clip values to be in the valid range [0, 255]
     img_array = np.clip(img_array, 0, 255)
     return img_array.astype(np.uint8)  
 
-def histogram(imag):
+
+def histogram(image):
     """
-    Applies histogram on the seleceted image
+    Applies histogram on the seleceted image and equalize it
     """
-    return 0
+    gray_image = Gray_image(image)
+    histogram_arr = np.zeros(256, dtype=int)
+    equalized_histogram = np.zeros(256, dtype=int)
+
+    for pixel in gray_image.flatten():
+        histogram_arr[pixel] += 1
+
+    cdf = histogram_arr.cumsum()  # Cumulative sum of the histogram
+    
+    # Step 3: Normalize the CDF to the range [0, 255]
+    cdf_normalized = np.uint8(255 * (cdf - cdf.min()) / (cdf.max() - cdf.min()))
+    
+    # Step 4: Map the original pixel values to the new ones based on the CDF
+    equalized_image = cdf_normalized[gray_image]
+    for pixel in equalized_image.flatten():
+        equalized_histogram[pixel] += 1
+    
+    return equalized_image, histogram_arr, equalized_histogram
+   
 
 def generateRowColumnSobelGradients():
     """Generates the x-component and y-component of Sobel operators."""
