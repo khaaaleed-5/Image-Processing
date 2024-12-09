@@ -441,14 +441,17 @@ def manual_segmentation(image, low_thresh, high_thresh, value=255):
     """
     Manual segmentation of an image using a low and high threshold. Where pixels within the threshold are set to `value`, and all other pixels are set to 0.
     """
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     mask = np.zeros_like(image)
     mask[(image >= low_thresh) & (image <= high_thresh)] = value
     return mask
 
-def histogram_peaks_segmentation(image, num_clusters=2, value=255, color_palette='tab10'):
+def histogram_peaks_segmentation(image, num_clusters=3, value=255, color_palette='tab10'):
     """
     Segmentation of an image using histogram peaks.
     """
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
     # Compute the histogram of the image
     hist = cv2.calcHist([image], [0], None, [256], [0, 255]).ravel()
 
@@ -514,6 +517,8 @@ def histogram_valleys_segmentation(image):
     """
     Segmentation of an image using histogram valleys.
     """
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
     # Compute the histogram
     hist = cv2.calcHist([image], [0], None, [256], [0, 255]).ravel()
 
@@ -539,7 +544,7 @@ def find_hist_peaks(hist):
     Find peaks in the histogram.
     """
     peaks, _ = find_peaks(hist, height=0)
-    return sorted(peaks, key=lambda x: hist[x], reverse=True)[:2]
+    return sorted(peaks, key=lambda x: hist[x], reverse=True)
 
 def find_hist_valley(peaks, hist):
     """
@@ -558,6 +563,8 @@ def histogram_adaptive_segmentation(image):
     """
     Segmentation of an image using adaptive histogram thresholding.
     """
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
     # Compute the histogram
     hist = cv2.calcHist([image], [0], None, [256], [0, 255]).ravel()
 
