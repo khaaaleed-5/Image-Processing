@@ -12,6 +12,14 @@ def read_image(file_path):
     """
     return cv2.imread(file_path)
 
+def Gray(image):
+    gray_image = 0.2989 * image[:, :, 0] + 0.5870 * image[:, :, 1] + 0.1140 * image[:, :, 2]
+
+    # Ensure the values are in integer range [0, 255] and convert to uint8
+    gray_image = np.round(gray_image).astype(np.uint8)
+
+    return gray_image
+
 def Gray_image(image):
     """
     Converts image's color to GRAYSCALE using OpenCV
@@ -571,9 +579,9 @@ def histogram_peaks_segmentation(image, num_clusters=3, value=255, color_palette
         cluster_mask = (image >= thresholds[i]) & (image < thresholds[i+1])
         
         # Color the segmented image
-        color_image = np.zeros((image.shape[0], image.shape[1], 3), dtype=np.uint8)
-        color_image[cluster_mask] = colors[i]
-        segmented_image[cluster_mask] = color_image[cluster_mask]
+        image = np.zeros((image.shape[0], image.shape[1], 3), dtype=np.uint8)
+        image[cluster_mask] = colors[i]
+        segmented_image[cluster_mask] = image[cluster_mask]
         
         # Create and store binary mask with value
         binary_mask = np.zeros_like(image)

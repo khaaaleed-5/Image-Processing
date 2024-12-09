@@ -88,6 +88,7 @@ class GUI:
         for widget in self.functionality_frame.winfo_children():
             widget.destroy()
 
+        self.create_function_button("Gray", self.Gray)
         self.create_function_button("Threshold", self.threshold)
         self.create_function_button("Histogram", self.histogram)
 
@@ -312,6 +313,19 @@ class GUI:
             processed_image_label.grid(row=1, column=1, padx=10, pady=5)
 
 
+    def Gray(self):
+        if self.original_image is None:
+            messagebox.showerror("Error", "Please upload an image first.")
+            return
+
+        # Call the halftoning function from image_utils
+        processed_image = Gray(self.original_image)
+
+        # Update the processed image
+        self.processed_image = processed_image
+
+        # Refresh images
+        self.display_images(technique="Gray Image")
 
     def threshold(self):
         if self.original_image is None:
