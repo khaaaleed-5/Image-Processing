@@ -395,9 +395,28 @@ class GUI:
         self.display_images(technique="Prewitt Operator")
 
     def simple_edge_kirsch(self):
+        """
+        Apply Kirsch edge detection and display results in the GUI.
+        """
+        # Check if the image is uploaded
         if self.original_image is None:
             messagebox.showerror("Error", "Please upload an image first.")
             return
+
+        # Call the Kirsch edge detection function
+        processed_image, dominant_direction = simple_edge_kirsch(self.original_image)
+
+        # Update the processed image in your object
+        self.processed_image = processed_image
+
+        # Print the dominant edge direction
+        print("Dominant Edge Direction:", dominant_direction)
+
+        # Display the dominant direction on the GUI
+
+        # Refresh images in your GUI (e.g., tkinter display)
+        self.display_images()
+        messagebox.showinfo("Dominant Edge Direction", f"The dominant edge direction is: {dominant_direction}")
 
     # Call the Kirsch edge detection function
         processed_image, direction = simple_edge_kirsch(self.original_image)
