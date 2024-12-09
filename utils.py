@@ -69,7 +69,6 @@ def advanced_halftoning(image):
     img_array = np.clip(img_array, 0, 255)
     return img_array.astype(np.uint8)  
 
-
 def histogram(image):
     """
     Applies histogram on the seleceted image and equalize it
@@ -85,7 +84,7 @@ def histogram(image):
     total_pixels = gray_image.size  # Total number of pixels in the image
     # histogram_arr = histogram_arr / total_pixels  # Divide by total number of pixels to get probabilities
     cdf = histogram_arr.cumsum()  # Cumulative sum of the histogram
-    cdf_normalized = (cdf * 255).astype(np.uint8)  # Scale the CDF values to fit 0-255 range
+    # cdf_normalized = (cdf * 255).astype(np.uint8)  # Scale the CDF values to fit 0-255 range
     
     # Step 3: Normalize the CDF to the range [0, 255]
     cdf_normalized = np.uint8(255 * (cdf - cdf.min()) / (cdf.max() - cdf.min()))
@@ -97,7 +96,6 @@ def histogram(image):
     
     return equalized_image, histogram_arr, equalized_histogram
    
-
 def generateRowColumnSobelGradients():
     """Generates the x-component and y-component of Sobel operators."""
     rowGradient = np.array([[1, 0, -1], [2, 0, -2], [1, 0, -1]])  # Sobel kernel for row (horizontal)
