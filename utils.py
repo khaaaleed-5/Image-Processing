@@ -3,12 +3,22 @@ import numpy as np
 import math
 from scipy.signal import find_peaks
 import matplotlib.pyplot as plt
+from PIL import Image, ImageDraw
+
 
 def read_image(file_path):
     """
     Reads an image using OpenCV.
     """
     return cv2.imread(file_path)
+
+def Gray(image):
+    gray_image = 0.2989 * image[:, :, 0] + 0.5870 * image[:, :, 1] + 0.1140 * image[:, :, 2]
+
+    # Ensure the values are in integer range [0, 255] and convert to uint8
+    gray_image = np.round(gray_image).astype(np.uint8)
+
+    return gray_image
 
 def Gray_image(image):
     """
@@ -55,122 +65,194 @@ def advanced_halftoning(image):
             img_array[i, j] = new_pixel
             # Error diffusion to neighboring pixels
             if i < row - 1: 
-                img_array[i + 1, j] += (5 / 16) * error
+                img_array[i + 1, j] += (5 / 16) * error         # down
             if i < row - 1 and j > 0:
-                img_array[i + 1, j - 1] += (3 / 16) * error
+                img_array[i + 1, j - 1] += (3 / 16) * error     # down -> left
             if i < row - 1 and j < column - 1:
-                img_array[i + 1, j + 1] += (1 / 16) * error
+                img_array[i + 1, j + 1] += (1 / 16) * error     # down -> right
             if j < column - 1:
-                img_array[i, j + 1] += (7 / 16) * error
+                img_array[i, j + 1] += (7 / 16) * error         # right
 
     # Clip values to be in the valid range [0, 255]
     img_array = np.clip(img_array, 0, 255)
     return img_array.astype(np.uint8)  
 
-def histogram(imag):
+def histogram(image):
     """
-    Applies histogram on the seleceted image
+    Applies histogram on the seleceted image and equalize it
     """
-    return 0
+    gray_image = Gray_image(image)
+    histogram_arr = np.zeros(256, dtype=int)
+    equalized_histogram = np.zeros(256, dtype=int)
 
+    for pixel in gray_image.flatten():
+        histogram_arr[pixel] += 1
+
+    # Normalize the histogram
+    total_pixels = gray_image.size  # Total number of pixels in the image
+    # histogram_arr = histogram_arr / total_pixels  # Divide by total number of pixels to get probabilities
+    cdf = histogram_arr.cumsum()  # Cumulative sum of the histogram
+    # cdf_normalized = (cdf * 255).astype(np.uint8)  # Scale the CDF values to fit 0-255 range
+    
+    # Step 3: Normalize the CDF to the range [0, 255]
+    cdf_normalized = np.uint8(255 * (cdf - cdf.min()) / (cdf.max() - cdf.min()))
+    
+    # Step 4: Map the original pixel values to the new ones based on the CDF
+    equalized_image = cdf_normalized[gray_image]
+    for pixel in equalized_image.flatten():
+        equalized_histogram[pixel] += 1
+    
+    return equalized_image, histogram_arr, equalized_histogram
+   
 def generateRowColumnSobelGradients():
     """Generates the x-component and y-component of Sobel operators."""
     rowGradient = np.array([[1, 0, -1], [2, 0, -2], [1, 0, -1]])  # Sobel kernel for row (horizontal)
     colGradient = np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])  # Sobel kernel for column (vertical)
     return rowGradient, colGradient
 
-def simple_edge_sobel(image):
-    """
-    Perform Sobel edge detection from scratch.
+def simple_edge_sobel(image,threshold=3):
+    # Convert the image to grayscale
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    Args:
-        image (numpy array): Input grayscale image as a 2D array.
+    # Define Sobel kernels for X and Y gradients
+    kernelx = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])  # X gradient (vertical edges)
+    kernely = np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])  # Y gradient (horizontal edges)
 
-    Returns:
-        result_rgb (numpy array): Sobel edge-detected image in RGB format.
-    """
-    # Ensure image is in grayscale
-    if len(image.shape) > 2:
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # Get the height and width of the image
+    height, width = gray.shape
 
-    # Get image dimensions
-    rows, cols = image.shape
+    # Create empty arrays to store the gradients
+    sobelx = np.zeros_like(gray, dtype=np.float32)
+    sobely = np.zeros_like(gray, dtype=np.float32)
 
-    # Initialize result array
-    result = np.zeros((rows, cols), dtype=float)
+    # Apply convolution manually for each pixel (excluding borders)
+    for i in range(1, height - 1):
+        for j in range(1, width - 1):
+            # Extract the 3x3 region around the pixel (i, j)
+            region = gray[i - 1:i + 2, j - 1:j + 2]
+            
+            # Apply the kernel for X and Y gradients
+            grad_x = np.sum(region * kernelx)
+            grad_y = np.sum(region * kernely)
 
-    # Pad the image to handle edges
-    padded_image = np.pad(image, pad_width=1, mode='constant', constant_values=0)
+            # Store the gradients in the respective arrays
+            sobelx[i, j] = grad_x
+            sobely[i, j] = grad_y
 
-    # Generate Sobel kernels
-    rowGradient, colGradient = generateRowColumnSobelGradients()
+    # Calculate the gradient magnitude (edge strength)
+    magnitude = np.sqrt(sobelx**2 + sobely**2)
 
-    # Apply Sobel operator
-    for i in range(1, rows + 1):
-        for j in range(1, cols + 1):
-            # Extract the 3x3 subregion
-            subimage = padded_image[i-1:i+2, j-1:j+2]
+    # Normalize the magnitude to the range [0, 255]
+    magnitude = np.uint8(np.clip(magnitude, 0, 255))
 
-            # Compute row and column gradients
-            rowSum = np.sum(rowGradient * subimage)
-            colSum = np.sum(colGradient * subimage)
+    # Thresholding: Keep strong edges, discard weak ones
+    thresholded_result = np.zeros_like(magnitude)
+    thresholded_result[magnitude >= threshold] = 255  # Assign 255 to strong edges
 
-            # Compute gradient magnitude
-            result[i-1, j-1] = math.sqrt(rowSum**2 + colSum**2)
+    # Print the edge array after thresholding
+    print("Edge Array (after thresholding):")
+    print(thresholded_result)
 
-    # Normalize the result to 0-255
-    result = (result / result.max() * 255).astype(np.uint8)
-
-    # Convert the result to RGB for display purposes
-    result_rgb = cv2.cvtColor(result, cv2.COLOR_GRAY2RGB)
-
-    return result_rgb
+    # Return both the magnitude and the thresholded result
+    return magnitude
 
 def simple_edge_prewitt(image):
+    # Convert the image to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    # Define Prewitt kernels
-    kernelx = np.array([[1, 0, -1], [1, 0, -1], [1, 0, -1]])  # X gradient
-    kernely = np.array([[1, 1, 1], [0, 0, 0], [-1, -1, -1]])  # Y gradient
 
-    # Apply the Prewitt operator
-    prewittx = cv2.filter2D(gray, cv2.CV_64F, kernelx)  # Use CV_64F for better precision
-    prewitty = cv2.filter2D(gray, cv2.CV_64F, kernely)
+    # Define Prewitt kernels for X and Y gradients
+    kernelx = np.array([[1, 0, -1], [1, 0, -1], [1, 0, -1]])  # X gradient (horizontal edges)
+    kernely = np.array([[1, 1, 1], [0, 0, 0], [-1, -1, -1]])  # Y gradient (vertical edges)
 
-   
+    # Get the height and width of the image
+    height, width = gray.shape
+
+    # Create empty arrays to store the gradients
+    prewittx = np.zeros_like(gray, dtype=np.float32)
+    prewitty = np.zeros_like(gray, dtype=np.float32)
+
+    # Apply convolution manually for each pixel (excluding borders)
+    for i in range(1, height - 1):
+        for j in range(1, width - 1):
+            # Extract the 3x3 region around the pixel (i, j)
+            region = gray[i - 1:i + 2, j - 1:j + 2]
+            
+            # Apply the kernel for X and Y gradients
+            grad_x = np.sum(region * kernelx)
+            grad_y = np.sum(region * kernely)
+
+            # Store the gradients in the respective arrays
+            prewittx[i, j] = grad_x
+            prewitty[i, j] = grad_y
+
+    # Calculate the gradient magnitude (edge strength)
     magnitude = np.sqrt(prewittx**2 + prewitty**2)
-    
-    # Normalize to preserve contrast
-    magnitude = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX)
-    magnitude = cv2.convertScaleAbs(magnitude)  # Convert to 8-bit
+
+    # Normalize the magnitude to the range [0, 255]
+    magnitude = np.uint8(np.clip(magnitude, 0, 255))
 
     return magnitude
 
 def simple_edge_kirsch(image):
-    # Convert to grayscale
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    
+
+    """
+    Apply Kirsch edge detection on an input image.
+
+    Args:
+        image: Input image (BGR format).
+
+    Returns:
+        edge_magnitude: The edge magnitude image (grayscale).
+        dominant_direction: The dominant edge direction label (compass direction) for the entire image.
+    """
+    # Kirsch Kernels
     kirsch_kernels = [
-        np.array([[5, 5, 5], [-3, 0, -3], [-3, -3, -3]]),  
-        np.array([[-3, 5, 5], [-3, 0, 5], [-3, -3, -3]]), 
-        np.array([[-3, -3, 5], [-3, 0, 5], [-3, -3, 5]]),  
-        np.array([[-3, -3, -3], [-3, 0, 5], [-3, 5, 5]]),  
-        np.array([[-3, -3, -3], [-3, 0, -3], [5, 5, 5]]), 
-        np.array([[-3, -3, -3], [5, 0, -3], [5, 5, -3]]),  
-        np.array([[5, -3, -3], [5, 0, -3], [5, -3, -3]]),  
-        np.array([[5, 5, -3], [5, 0, -3], [-3, -3, -3]])   
+        np.array([[5, 5, 5], [-3, 0, -3], [-3, -3, -3]]),  # N
+        np.array([[5, 5, -3], [5, 0, -3], [-3, -3, -3]]),  # NW
+        np.array([[5, -3, -3], [5, 0, -3], [5, -3, -3]]),  # W
+        np.array([[-3, -3, -3], [5, 0, -3], [5, 5, -3]]),  # SW
+        np.array([[-3, -3, -3], [-3, 0, -3], [5, 5, 5]]),  # S
+        np.array([[-3, -3, -3], [-3, 0, 5], [-3, 5, 5]]),  # SE
+        np.array([[-3, -3, 5], [-3, 0, 5], [-3, -3, 5]]),  # E
+        np.array([[-3, 5, 5], [-3, 0, 5], [-3, -3, -3]])   # NE
     ]
-    
-    # Apply Kirsch kernels
-    kirsch_edges = [cv2.filter2D(gray, -1, kernel) for kernel in kirsch_kernels]
-    
-    
-    kirsch_magnitude = np.max(kirsch_edges, axis=0)
-    kirsch_direction = np.argmax(kirsch_edges, axis=0)  
-    
-    
-    kirsch_magnitude = cv2.convertScaleAbs(kirsch_magnitude)
-    
-    return kirsch_magnitude, kirsch_direction
+
+    directions = ["N", "NW", "W", "SW", "S", "SE", "E", "NE"]
+
+    # Convert to grayscale if the image is in color
+    if len(image.shape) == 3:
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = image
+
+    # Initialize arrays to store edge magnitude and direction
+    edge_magnitude = np.zeros_like(gray, dtype=np.float32)
+    edge_direction = np.zeros_like(gray, dtype=np.int32)
+
+    # Apply Kirsch kernels and compute magnitude and direction
+    for idx, kernel in enumerate(kirsch_kernels):
+        response = cv2.filter2D(gray, -1, kernel)
+        mask = response > edge_magnitude
+        edge_magnitude[mask] = response[mask]
+        edge_direction[mask] = idx
+
+    # Normalize and convert edge magnitude to 8-bit format
+    edge_magnitude = np.clip(edge_magnitude, 0, 255).astype(np.uint8)
+
+    # Count directions and determine the dominant one
+    unique, counts = np.unique(edge_direction, return_counts=True)
+    direction_counts = dict(zip(unique, counts))
+    dominant_direction_idx = max(direction_counts, key=direction_counts.get)
+    dominant_direction = directions[dominant_direction_idx]
+
+    # Log the edge direction counts
+    print("Edge Directions Count:")
+    for dir_idx, count in direction_counts.items():
+        print(f"{directions[dir_idx]}: {count}")
+
+    print(f"\nDominant Edge Direction: {dominant_direction}")
+
+    return edge_magnitude, dominant_direction
 
 def advanced_edge_homogeneity(image):
     """

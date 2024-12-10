@@ -88,6 +88,7 @@ class GUI:
         for widget in self.functionality_frame.winfo_children():
             widget.destroy()
 
+        self.create_function_button("Gray", self.Gray)
         self.create_function_button("Threshold", self.threshold)
         self.create_function_button("Histogram", self.histogram)
 
@@ -312,6 +313,19 @@ class GUI:
             processed_image_label.grid(row=1, column=1, padx=10, pady=5)
 
 
+    def Gray(self):
+        if self.original_image is None:
+            messagebox.showerror("Error", "Please upload an image first.")
+            return
+
+        # Call the halftoning function from image_utils
+        processed_image = Gray(self.original_image)
+
+        # Update the processed image
+        self.processed_image = processed_image
+
+        # Refresh images
+        self.display_images(technique="Gray Image")
 
     def threshold(self):
         if self.original_image is None:
@@ -356,15 +370,32 @@ class GUI:
         if self.original_image is None:
             messagebox.showerror("Error", "Please upload an image first.")
             return
-
+        
         # Call the histogram function from utils
-        processed_image = histogram(self.original_image)
-
+        processed_image, histogram_arr, equalized_histogram_arr = histogram(self.original_image)
         # Update the processed image
         self.processed_image = processed_image
 
         # Refresh images
-        self.display_images(technique="Histogram")
+        self.display_images(technique="Equalized Image")
+        plt.figure(figsize=(10, 6))
+        
+        plt.subplot(1,2,1)
+        plt.bar(range(256), histogram_arr, color='gray', edgecolor='black')
+        plt.title("Histogram of Image")
+        plt.xlabel("Pixel Intensity (0-255)")
+        plt.ylabel("Frequency")
+        plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+        plt.subplot(1,2,2)
+        plt.bar(range(256), equalized_histogram_arr, color='gray', edgecolor='black')
+        plt.title("Equalized histogram of Image")
+        plt.xlabel("Pixel Intensity (0-255)")
+        plt.ylabel("Frequency")
+        plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+        plt.show()
+
     
     def simple_edge_sobel(self):
         if self.original_image is None:
@@ -395,9 +426,28 @@ class GUI:
         self.display_images(technique="Prewitt Operator")
 
     def simple_edge_kirsch(self):
+        """
+        Apply Kirsch edge detection and display results in the GUI.
+        """
+        # Check if the image is uploaded
         if self.original_image is None:
             messagebox.showerror("Error", "Please upload an image first.")
             return
+
+        # Call the Kirsch edge detection function
+        processed_image, dominant_direction = simple_edge_kirsch(self.original_image)
+
+        # Update the processed image in your object
+        self.processed_image = processed_image
+
+        # Print the dominant edge direction
+        print("Dominant Edge Direction:", dominant_direction)
+
+        # Display the dominant direction on the GUI
+
+        # Refresh images in your GUI (e.g., tkinter display)
+        self.display_images()
+        messagebox.showinfo("Dominant Edge Direction", f"The dominant edge direction is: {dominant_direction}")
 
     # Call the Kirsch edge detection function
         processed_image, direction = simple_edge_kirsch(self.original_image)
