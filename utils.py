@@ -194,6 +194,7 @@ def simple_edge_prewitt(image):
     return magnitude
 
 def simple_edge_kirsch(image):
+
     """
     Apply Kirsch edge detection on an input image.
 
@@ -201,63 +202,57 @@ def simple_edge_kirsch(image):
         image: Input image (BGR format).
 
     Returns:
-        kirsch_magnitude: The edge magnitude image (grayscale).
+        edge_magnitude: The edge magnitude image (grayscale).
         dominant_direction: The dominant edge direction label (compass direction) for the entire image.
     """
-    # Convert to grayscale
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-    # Define Kirsch kernels for 8 compass directions
+    # Kirsch Kernels
     kirsch_kernels = [
         np.array([[5, 5, 5], [-3, 0, -3], [-3, -3, -3]]),  # N
-        np.array([[-3, 5, 5], [-3, 0, 5], [-3, -3, -3]]),  # NW
-        np.array([[-3, -3, 5], [-3, 0, 5], [-3, -3, 5]]),  # W
-        np.array([[-3, -3, -3], [-3, 0, 5], [-3, 5, 5]]),  # SW
+        np.array([[5, 5, -3], [5, 0, -3], [-3, -3, -3]]),  # NW
+        np.array([[5, -3, -3], [5, 0, -3], [5, -3, -3]]),  # W
+        np.array([[-3, -3, -3], [5, 0, -3], [5, 5, -3]]),  # SW
         np.array([[-3, -3, -3], [-3, 0, -3], [5, 5, 5]]),  # S
-        np.array([[-3, -3, -3], [5, 0, -3], [5, 5, -3]]),  # SE
-        np.array([[5, -3, -3], [5, 0, -3], [5, -3, -3]]),  # E
-        np.array([[5, 5, -3], [5, 0, -3], [-3, -3, -3]])   # NE
+        np.array([[-3, -3, -3], [-3, 0, 5], [-3, 5, 5]]),  # SE
+        np.array([[-3, -3, 5], [-3, 0, 5], [-3, -3, 5]]),  # E
+        np.array([[-3, 5, 5], [-3, 0, 5], [-3, -3, -3]])   # NE
     ]
 
-    # Apply Kirsch kernels to the image
-    kirsch_edges = [cv2.filter2D(gray, -1, kernel) for kernel in kirsch_kernels]
+    directions = ["N", "NW", "W", "SW", "S", "SE", "E", "NE"]
 
-    # Calculate magnitude (maximum response) and direction (index of maximum response)
-    kirsch_magnitude = np.max(kirsch_edges, axis=0)
-    kirsch_direction_indices = np.argmax(kirsch_edges, axis=0)
+    # Convert to grayscale if the image is in color
+    if len(image.shape) == 3:
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = image
 
-    # Map indices to compass labels
-    compass_labels = ["N", "NW", "W", "SW", "S", "SE", "E", "NE"]
+    # Initialize arrays to store edge magnitude and direction
+    edge_magnitude = np.zeros_like(gray, dtype=np.float32)
+    edge_direction = np.zeros_like(gray, dtype=np.int32)
 
-    # Compute the dominant direction over the entire image
-    dominant_direction_index = np.bincount(kirsch_direction_indices.flatten()).argmax()
-    dominant_direction = compass_labels[dominant_direction_index]
+    # Apply Kirsch kernels and compute magnitude and direction
+    for idx, kernel in enumerate(kirsch_kernels):
+        response = cv2.filter2D(gray, -1, kernel)
+        mask = response > edge_magnitude
+        edge_magnitude[mask] = response[mask]
+        edge_direction[mask] = idx
 
-    return kirsch_magnitude, dominant_direction    # Convert to grayscale
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    
-    kirsch_kernels = [
-        np.array([[5, 5, 5], [-3, 0, -3], [-3, -3, -3]]),  
-        np.array([[-3, 5, 5], [-3, 0, 5], [-3, -3, -3]]), 
-        np.array([[-3, -3, 5], [-3, 0, 5], [-3, -3, 5]]),  
-        np.array([[-3, -3, -3], [-3, 0, 5], [-3, 5, 5]]),  
-        np.array([[-3, -3, -3], [-3, 0, -3], [5, 5, 5]]), 
-        np.array([[-3, -3, -3], [5, 0, -3], [5, 5, -3]]),  
-        np.array([[5, -3, -3], [5, 0, -3], [5, -3, -3]]),  
-        np.array([[5, 5, -3], [5, 0, -3], [-3, -3, -3]])   
-    ]
-    
-    # Apply Kirsch kernels
-    kirsch_edges = [cv2.filter2D(gray, -1, kernel) for kernel in kirsch_kernels]
-    
-    
-    kirsch_magnitude = np.max(kirsch_edges, axis=0)
-    kirsch_direction = np.argmax(kirsch_edges, axis=0)  
-    
-    
-    kirsch_magnitude = cv2.convertScaleAbs(kirsch_magnitude)
-    
-    return kirsch_magnitude, kirsch_direction
+    # Normalize and convert edge magnitude to 8-bit format
+    edge_magnitude = np.clip(edge_magnitude, 0, 255).astype(np.uint8)
+
+    # Count directions and determine the dominant one
+    unique, counts = np.unique(edge_direction, return_counts=True)
+    direction_counts = dict(zip(unique, counts))
+    dominant_direction_idx = max(direction_counts, key=direction_counts.get)
+    dominant_direction = directions[dominant_direction_idx]
+
+    # Log the edge direction counts
+    print("Edge Directions Count:")
+    for dir_idx, count in direction_counts.items():
+        print(f"{directions[dir_idx]}: {count}")
+
+    print(f"\nDominant Edge Direction: {dominant_direction}")
+
+    return edge_magnitude, dominant_direction
 
 def advanced_edge_homogeneity(image):
     """
