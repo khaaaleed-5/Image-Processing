@@ -319,7 +319,7 @@ class GUI:
             return
 
         # Call the halftoning function from image_utils
-        processed_image = Gray(self.original_image)
+        processed_image = Gray_image(self.original_image)
 
         # Update the processed image
         self.processed_image = processed_image
@@ -395,8 +395,7 @@ class GUI:
         plt.grid(axis='y', linestyle='--', alpha=0.7)
 
         plt.show()
-
-    
+   
     def simple_edge_sobel(self):
         if self.original_image is None:
             messagebox.showerror("Error", "Please upload an image first.")

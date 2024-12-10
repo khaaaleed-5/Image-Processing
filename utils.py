@@ -12,19 +12,12 @@ def read_image(file_path):
     """
     return cv2.imread(file_path)
 
-def Gray(image):
-    gray_image = 0.2989 * image[:, :, 0] + 0.5870 * image[:, :, 1] + 0.1140 * image[:, :, 2]
+def Gray_image(image):
+    gray_image = 0.2989 * image[:, :, 0] + 0.5870 * image[:, :, 1] + 0.1140 * image[:, :, 2] if image.ndim == 3 else image
 
     # Ensure the values are in integer range [0, 255] and convert to uint8
     gray_image = np.round(gray_image).astype(np.uint8)
 
-    return gray_image
-
-def Gray_image(image):
-    """
-    Converts image's color to GRAYSCALE using OpenCV
-    """
-    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     return gray_image
 
 def threshold(image):
@@ -88,16 +81,10 @@ def histogram(image):
     for pixel in gray_image.flatten():
         histogram_arr[pixel] += 1
 
-    # Normalize the histogram
-    total_pixels = gray_image.size  # Total number of pixels in the image
-    # histogram_arr = histogram_arr / total_pixels  # Divide by total number of pixels to get probabilities
     cdf = histogram_arr.cumsum()  # Cumulative sum of the histogram
-    # cdf_normalized = (cdf * 255).astype(np.uint8)  # Scale the CDF values to fit 0-255 range
     
-    # Step 3: Normalize the CDF to the range [0, 255]
     cdf_normalized = np.uint8(255 * (cdf - cdf.min()) / (cdf.max() - cdf.min()))
     
-    # Step 4: Map the original pixel values to the new ones based on the CDF
     equalized_image = cdf_normalized[gray_image]
     for pixel in equalized_image.flatten():
         equalized_histogram[pixel] += 1
@@ -112,7 +99,7 @@ def generateRowColumnSobelGradients():
 
 def simple_edge_sobel(image,threshold=3):
     # Convert the image to grayscale
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    gray = Gray_image(image)
 
     # Define Sobel kernels for X and Y gradients
     kernelx = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])  # X gradient (vertical edges)
@@ -158,7 +145,7 @@ def simple_edge_sobel(image,threshold=3):
 
 def simple_edge_prewitt(image):
     # Convert the image to grayscale
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    gray = Gray_image(image)
 
     # Define Prewitt kernels for X and Y gradients
     kernelx = np.array([[1, 0, -1], [1, 0, -1], [1, 0, -1]])  # X gradient (horizontal edges)
@@ -220,10 +207,7 @@ def simple_edge_kirsch(image):
     directions = ["N", "NW", "W", "SW", "S", "SE", "E", "NE"]
 
     # Convert to grayscale if the image is in color
-    if len(image.shape) == 3:
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    else:
-        gray = image
+    gray = Gray_image(image)
 
     # Initialize arrays to store edge magnitude and direction
     edge_magnitude = np.zeros_like(gray, dtype=np.float32)
@@ -359,9 +343,10 @@ def advanced_edge_contrastBased(image):
     contrast_enhanced = clahe.apply(gray_image)
 
     # Apply gamma correction to brighten the image
-    gamma = 0.5  
-    gamma_corrected = np.power(contrast_enhanced / 255.0, gamma) * 255.0
-    gamma_corrected = np.clip(gamma_corrected, 0, 255).astype(np.uint8)
+    # gamma = 0.5  
+    # gamma_corrected = np.power(contrast_enhanced / 255.0, gamma) * 255.0
+    # gamma_corrected = np.clip(gamma_corrected, 0, 255).astype(np.uint8)
+    gamma_corrected=gray_image
 
     # Define Laplacian edge-detection mask
     edge_mask = np.array([[0, -1, 0],
@@ -390,32 +375,54 @@ def advanced_edge_contrastBased(image):
 
 def advanced_edge_varianceBased(image):
     """
-    Applies variance operator
+    Applies variance operator with padding
     """
-    gray_image=Gray_image(image)
-    variance_edge_image =np.zeros_like(gray_image)
-    height,width=gray_image.shape
-    for i in range(1,height-1):
-        for j in range(1,width-1):
-            neighborhood=gray_image[i-1:i+2,j-1:j+2]
-            mean=np.mean(neighborhood)
-            variance= np.sum((neighborhood-mean)**2)/9
-            variance_edge_image[i,j]=variance
-
+    # Check if the image is in color (has 3 channels)
+    gray_image = Gray_image(image)
+    
+    # Define kernel size and padding
+    kernel_size = 3
+    pad = kernel_size // 2
+    
+    # Apply reflection padding
+    padded_image = np.pad(gray_image, ((pad, pad), (pad, pad)), mode='constant', constant_values=0)
+    
+    # Initialize variance edge image
+    variance_edge_image = np.zeros_like(gray_image, dtype=np.float32)
+    height, width = gray_image.shape
+    
+    # Iterate through original image dimensions
+    for i in range(height):
+        for j in range(width):
+            # Extract neighborhood from padded image
+            neighborhood = padded_image[i:i+kernel_size, j:j+kernel_size]
+            
+            # Calculate mean of the neighborhood
+            mean = np.mean(neighborhood)
+            
+            # Calculate variance
+            # Divide by (kernel_size * kernel_size) for normalization
+            variance = np.sum((neighborhood - mean)**2) / (kernel_size * kernel_size)
+            
+            # Store variance value
+            variance_edge_image[i, j] = variance
+    
     return variance_edge_image
 
 def advanced_edge_rangeBased(image):
     """
     Applies range operator
     """
-    gray_image=Gray_image(image)
-    range_edge_image =np.zeros_like(gray_image)
-    height,width=gray_image.shape
-    for i in range(1,height-1):
-        for j in range(1,width-1):
-            neighborhood=gray_image[i-1:i+2,j-1:j+2]
-            range_value= np.max(neighborhood)-np.min(neighborhood)
-            range_edge_image[i,j]=range_value
+    gray_image = Gray_image(image)
+    padded_image = np.pad(gray_image, pad_width=1, mode='constant', constant_values=0)
+    range_edge_image = np.zeros_like(gray_image)
+    height, width = gray_image.shape
+
+    for i in range(height):
+        for j in range(width):
+            neighborhood = padded_image[i:i+3, j:j+3]
+            range_value = np.max(neighborhood) - np.min(neighborhood)
+            range_edge_image[i, j] = range_value
 
     return range_edge_image
 
@@ -426,9 +433,7 @@ def high_bass_filtering(image):
                               [0, -1, 0]
                               ], dtype=np.float32)
     # Check if the image is in color (has 3 channels)
-    if len(image.shape) == 3 and image.shape[2] == 3:
-        # Convert the image to grayscale
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    image=Gray_image(image)
     
     def conv(image, mask1):
         result=cv2.filter2D(image, -1, mask1)
@@ -444,9 +449,7 @@ def low_bass_filtering(image):
                               [0, 1/6, 0]
                               ], dtype=np.float32)
     # Check if the image is in color (has 3 channels)
-    if len(image.shape) == 3 and image.shape[2] == 3:
-        # Convert the image to grayscale
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    image=Gray_image(image)
     
     def conv(image, mask1):
         result=cv2.filter2D(image, -1, mask1)
@@ -457,9 +460,7 @@ def low_bass_filtering(image):
 
 def median_filtering(image):
     # Check if the image is in color (has 3 channels)
-    if len(image.shape) == 3 and image.shape[2] == 3:
-        # Convert the image to grayscale
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    image=Gray_image(image)
 
     # Get image dimensions
     kernel_size=5
@@ -488,13 +489,7 @@ def median_filtering(image):
 
 def add_image(image):
     image = Gray_image(image)
-    image2 = image
-    height, width = image.shape
-    added_image = np.zeros((height, width), dtype=np.uint8)
-    for i in range(height):
-        for j in range(width):
-            added_image[i, j] = image[i, j] + image2[i, j]
-            added_image[i, j] = max(0, min(added_image[i, j],255))
+    added_image = image.astype(np.int16) + image.astype(np.int16)
     return added_image
 
 def subtract_image(image):
@@ -523,7 +518,7 @@ def manual_segmentation(image, low_thresh, high_thresh, value=255):
     """
     Manual segmentation of an image using a low and high threshold. Where pixels within the threshold are set to `value`, and all other pixels are set to 0.
     """
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    image = Gray_image(image)
     mask = np.zeros_like(image)
     mask[(image >= low_thresh) & (image <= high_thresh)] = value
     return mask
@@ -532,10 +527,10 @@ def histogram_peaks_segmentation(image, num_clusters=3, value=255, color_palette
     """
     Segmentation of an image using histogram peaks.
     """
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    image = Gray_image(image)
 
     # Compute the histogram of the image
-    hist = cv2.calcHist([image], [0], None, [256], [0, 255]).ravel()
+    _, hist, _ = histogram(image)
 
     peaks = find_hist_peaks(hist)
     
@@ -599,10 +594,10 @@ def histogram_valleys_segmentation(image):
     """
     Segmentation of an image using histogram valleys.
     """
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    image = Gray_image(image)
 
     # Compute the histogram
-    hist = cv2.calcHist([image], [0], None, [256], [0, 255]).ravel()
+    _, hist, _ = histogram(image)
 
     # Find peaks in the histogram
     peaks = find_hist_peaks(hist)[:2]
@@ -645,10 +640,10 @@ def histogram_adaptive_segmentation(image):
     """
     Segmentation of an image using adaptive histogram thresholding.
     """
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    image = Gray_image(image)
 
     # Compute the histogram
-    hist = cv2.calcHist([image], [0], None, [256], [0, 255]).ravel()
+    _, hist, _ = histogram(image)
 
     # Find peaks in the histogram
     peaks = find_hist_peaks(hist)[:2]
