@@ -579,9 +579,9 @@ def histogram_peaks_segmentation(image, num_clusters=3, value=255, color_palette
         cluster_mask = (image >= thresholds[i]) & (image < thresholds[i+1])
         
         # Color the segmented image
-        image = np.zeros((image.shape[0], image.shape[1], 3), dtype=np.uint8)
-        image[cluster_mask] = colors[i]
-        segmented_image[cluster_mask] = image[cluster_mask]
+        color_image = np.zeros((image.shape[0], image.shape[1], 3), dtype=np.uint8)
+        color_image[cluster_mask] = colors[i]
+        segmented_image[cluster_mask] = color_image[cluster_mask]
         
         # Create and store binary mask with value
         binary_mask = np.zeros_like(image)
