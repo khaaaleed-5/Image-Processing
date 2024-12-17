@@ -3,7 +3,6 @@ import numpy as np
 import math
 from scipy.signal import find_peaks
 import matplotlib.pyplot as plt
-from PIL import Image, ImageDraw
 
 
 def read_image(file_path):
