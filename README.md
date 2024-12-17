@@ -1,16 +1,1 @@
-Image Processing Project.
-
-Team Members:
-
-1-Khaled Ashraf
-
-2-Abdullah Hamdi
-
-3-Omar Abdellnaser
-
-4-Omar Younis
-
-5-karim Imam
-
-6-Omar Magdy
-
+This project demonstrates various image processing techniques, including converting images to grayscale, applying histogram equalization, plotting histograms, simple and advanced halftoning, simple and advanced edge detection including their types, and many other techniques that are useful for image processing.
